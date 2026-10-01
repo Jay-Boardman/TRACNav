@@ -1,0 +1,6 @@
+{
+  "name": "HospitalNav - Indoor Hospital Wayfinder & Transfusion Asset Tracker",
+  "description": "Offline indoor hospital navigation with turn-by-turn corridor routing, red blood transport bag inventory, transfusion request form dropboxes, and door access codes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
