@@ -19,9 +19,8 @@ export const TabBar: React.FC<TabBarProps> = ({
         <div className="w-5 h-5 rounded-md overflow-hidden border border-blue-800/80 shadow-sm shrink-0 flex items-center justify-center bg-slate-950">
           <img src="/apple-touch-icon.png" alt="App Icon" className="w-full h-full object-cover" />
         </div>
-        <h1 className="text-xs sm:text-sm font-bold text-white tracking-tight truncate max-w-[210px] xs:max-w-xs sm:max-w-none">
-          <span className="hidden xs:inline">Transfusion Records And Compliance Navigator</span>
-          <span className="xs:hidden">Transfusion Compliance Nav</span>
+        <h1 className="text-xs sm:text-sm font-bold text-white tracking-tight truncate max-w-[240px] sm:max-w-none">
+          Transfusion Records and Compliance
         </h1>
       </div>
 

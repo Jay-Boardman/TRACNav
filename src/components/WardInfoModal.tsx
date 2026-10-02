@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Room,
   HospitalData,
@@ -37,8 +37,6 @@ interface WardInfoModalProps {
   onUpdateRoom: (room: Room) => void;
 }
 
-type TabType = 'all' | 'red-boxes' | 'paperwork' | 'door-codes' | 'notes';
-
 export const WardInfoModal: React.FC<WardInfoModalProps> = ({
   isOpen,
   onClose,
@@ -50,8 +48,14 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
   onUpdateDoorCodes,
   onUpdateRoom,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('all');
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+  const [showQuickAddMenu, setShowQuickAddMenu] = useState<boolean>(false);
+
+  // Section anchor refs for smooth auto-scrolling
+  const redBoxRef = useRef<HTMLDivElement>(null);
+  const paperworkRef = useRef<HTMLDivElement>(null);
+  const doorRef = useRef<HTMLDivElement>(null);
+  const notesRef = useRef<HTMLDivElement>(null);
 
   // Form states for adding/editing items
   const [showAddBag, setShowAddBag] = useState<boolean>(false);
@@ -87,6 +91,7 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
       setShowAddBag(false);
       setShowAddForm(false);
       setShowAddDoor(false);
+      setShowQuickAddMenu(false);
       setEditingBagId(null);
       setEditingFormId(null);
       setEditingDoorId(null);
@@ -307,89 +312,98 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
               style={{ backgroundColor: room.color || '#2563eb' }}
             />
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                  {room.name}
-                </h2>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 capitalize font-medium">
-                  {room.wing} Wing · Floor {room.floorId}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {isEditMode ? (
-                  <span className="text-amber-300 font-semibold flex items-center gap-1">
-                    <Edit2 className="w-3 h-3" /> Layout Edit Mode — Add or modify ward information below
-                  </span>
-                ) : (
-                  <span>Ward Information & Asset Locations</span>
-                )}
-              </p>
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                {room.name}
+              </h2>
+              {isEditMode && (
+                <p className="text-xs text-amber-300 font-semibold flex items-center gap-1 mt-0.5">
+                  <Edit2 className="w-3 h-3" /> Layout Edit Mode — Add or modify ward information below
+                </p>
+              )}
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+          <div className="flex items-center gap-2">
+            {/* Quick Add Menu / Plus Button */}
+            <div className="relative">
+              <button
+                onClick={() => setShowQuickAddMenu((prev) => !prev)}
+                className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
+                title="Add information to this ward"
+                aria-label="Add information to this ward"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add Info</span>
+              </button>
 
-        {/* Filter Navigation Tabs */}
-        <div className="px-5 pt-3 border-b border-slate-800 flex items-center gap-2 overflow-x-auto bg-slate-900/60 scrollbar-none">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 rounded-t-xl text-xs font-semibold border-b-2 transition-colors shrink-0 ${
-              activeTab === 'all'
-                ? 'border-blue-500 text-white bg-slate-800/80'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            All Information
-          </button>
-          <button
-            onClick={() => setActiveTab('red-boxes')}
-            className={`px-3 py-1.5 rounded-t-xl text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'red-boxes'
-                ? 'border-red-500 text-red-200 bg-red-950/30'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Package className="w-3.5 h-3.5 text-red-400" />
-            <span>Red Boxes ({roomBags.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('paperwork')}
-            className={`px-3 py-1.5 rounded-t-xl text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'paperwork'
-                ? 'border-orange-500 text-orange-200 bg-orange-950/30'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5 text-orange-400" />
-            <span>Paperwork ({roomForms.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('door-codes')}
-            className={`px-3 py-1.5 rounded-t-xl text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'door-codes'
-                ? 'border-amber-500 text-amber-200 bg-amber-950/30'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-            <span>Door Codes ({roomDoorCodes.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('notes')}
-            className={`px-3 py-1.5 rounded-t-xl text-xs font-semibold border-b-2 transition-colors shrink-0 ${
-              activeTab === 'notes'
-                ? 'border-purple-500 text-purple-200 bg-purple-950/30'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Ward Notes
-          </button>
+              {showQuickAddMenu && (
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <button
+                    onClick={() => {
+                      setShowQuickAddMenu(false);
+                      setEditingBagId(null);
+                      setBagLocation('');
+                      setBagSerial(`RBTB-${Math.floor(1000 + Math.random() * 9000)}`);
+                      setBagNotes('');
+                      setShowAddBag(true);
+                      setTimeout(() => redBoxRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-red-200 hover:bg-red-950/60 flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <Package className="w-4 h-4 text-red-400 shrink-0" />
+                    <span>+ Add Red Box</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowQuickAddMenu(false);
+                      setEditingFormId(null);
+                      setFormExactSpot('');
+                      setFormNotes('');
+                      setShowAddForm(true);
+                      setTimeout(() => paperworkRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-orange-200 hover:bg-orange-950/60 flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-orange-400 shrink-0" />
+                    <span>+ Add Paperwork Spot</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowQuickAddMenu(false);
+                      setEditingDoorId(null);
+                      setDoorName(`${room.name} Access Keypad`);
+                      setDoorCode('');
+                      setDoorLocationDesc(`Corridor entrance to ${room.name}`);
+                      setShowAddDoor(true);
+                      setTimeout(() => doorRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-amber-200 hover:bg-amber-950/60 flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <KeyRound className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>+ Add Door Code</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowQuickAddMenu(false);
+                      setIsEditingWardNotes(true);
+                      setTimeout(() => notesRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-blue-200 hover:bg-blue-950/60 flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <Edit2 className="w-4 h-4 text-blue-400 shrink-0" />
+                    <span>+ Edit / Add Ward Notes</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={onClose}
+              className="p-1.5 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Modal Scrollable Body */}
@@ -397,8 +411,7 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
           {/* ========================================================
               SECTION 1: RED BOX (BLOOD TRANSPORT BAG) LOCATIONS
              ======================================================== */}
-          {(activeTab === 'all' || activeTab === 'red-boxes') && (
-            <div className="space-y-3">
+          <div ref={redBoxRef} className="space-y-3">
               <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                 <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
                   <div className="p-1 rounded-lg bg-red-950 text-red-400 border border-red-800">
@@ -406,26 +419,10 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
                   </div>
                   <span>Red Box Locations (Blood Transport Bags)</span>
                 </div>
-
-                {isEditMode && !showAddBag && (
-                  <button
-                    onClick={() => {
-                      setEditingBagId(null);
-                      setBagLocation('');
-                      setBagSerial(`RBTB-${Math.floor(1000 + Math.random() * 9000)}`);
-                      setBagNotes('');
-                      setShowAddBag(true);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-1 shadow-md"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>+ Add Red Box</span>
-                  </button>
-                )}
               </div>
 
-              {/* Add / Edit Red Box Form (Only in Edit Mode) */}
-              {isEditMode && showAddBag && (
+              {/* Add / Edit Red Box Form */}
+              {showAddBag && (
                 <form
                   onSubmit={handleSaveBag}
                   className="p-4 rounded-2xl bg-red-950/30 border border-red-800/80 space-y-3 animate-in fade-in duration-150"
@@ -526,11 +523,6 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
               {roomBags.length === 0 && !showAddBag ? (
                 <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-800 text-center text-xs text-slate-400">
                   <span>No red box locations registered for this ward yet.</span>
-                  {isEditMode && (
-                    <span className="block mt-1 text-red-300 font-semibold">
-                      Click "+ Add Red Box" above to add one.
-                    </span>
-                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-2.5">
@@ -561,37 +553,33 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
                         )}
                       </div>
 
-                      {/* Edit actions in Edit Mode */}
-                      {isEditMode && (
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            onClick={() => handleStartEditBag(bag)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
-                            title="Edit Location"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteBag(bag.id)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-300 hover:text-red-300"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
+                      {/* Edit actions */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleStartEditBag(bag)}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
+                          title="Edit Location"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBag(bag.id)}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-300 hover:text-red-300"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          )}
+          </div>
 
           {/* ========================================================
               SECTION 2: PAPERWORK (TRANSFUSION FORMS) LOCATIONS
              ======================================================== */}
-          {(activeTab === 'all' || activeTab === 'paperwork') && (
-            <div className="space-y-3">
+          <div ref={paperworkRef} className="space-y-3">
               <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                 <div className="flex items-center gap-2 text-orange-400 font-bold text-sm">
                   <div className="p-1 rounded-lg bg-orange-950 text-orange-400 border border-orange-800">
@@ -599,25 +587,10 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
                   </div>
                   <span>Paperwork Locations (Transfusion Request Trays)</span>
                 </div>
-
-                {isEditMode && !showAddForm && (
-                  <button
-                    onClick={() => {
-                      setEditingFormId(null);
-                      setFormExactSpot('');
-                      setFormNotes('');
-                      setShowAddForm(true);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold flex items-center gap-1 shadow-md"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>+ Add Paperwork Spot</span>
-                  </button>
-                )}
               </div>
 
-              {/* Add / Edit Paperwork Form (Only in Edit Mode) */}
-              {isEditMode && showAddForm && (
+              {/* Add / Edit Paperwork Form */}
+              {showAddForm && (
                 <form
                   onSubmit={handleSaveForm}
                   className="p-4 rounded-2xl bg-orange-950/30 border border-orange-800/80 space-y-3 animate-in fade-in duration-150"
@@ -721,11 +694,6 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
               {roomForms.length === 0 && !showAddForm ? (
                 <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-800 text-center text-xs text-slate-400">
                   <span>No paperwork drop locations registered for this ward yet.</span>
-                  {isEditMode && (
-                    <span className="block mt-1 text-orange-300 font-semibold">
-                      Click "+ Add Paperwork Spot" above to register one.
-                    </span>
-                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-2.5">
@@ -764,37 +732,33 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
                         )}
                       </div>
 
-                      {/* Edit actions in Edit Mode */}
-                      {isEditMode && (
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            onClick={() => handleStartEditForm(form)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
-                            title="Edit Spot"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteForm(form.id)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-300 hover:text-red-300"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
+                      {/* Edit actions */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleStartEditForm(form)}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
+                          title="Edit Spot"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteForm(form.id)}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-300 hover:text-red-300"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          )}
+          </div>
 
           {/* ========================================================
               SECTION 3: DOOR SECURITY CODES
              ======================================================== */}
-          {(activeTab === 'all' || activeTab === 'door-codes') && (
-            <div className="space-y-3">
+          <div ref={doorRef} className="space-y-3">
               <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                 <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
                   <div className="p-1 rounded-lg bg-amber-950 text-amber-400 border border-amber-800">
@@ -802,26 +766,10 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
                   </div>
                   <span>Door Access & Security Codes</span>
                 </div>
-
-                {isEditMode && !showAddDoor && (
-                  <button
-                    onClick={() => {
-                      setEditingDoorId(null);
-                      setDoorName(`${room.name} Access Keypad`);
-                      setDoorCode('');
-                      setDoorLocationDesc(`Corridor double doors entering ${room.name}`);
-                      setShowAddDoor(true);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>+ Add Door Code</span>
-                  </button>
-                )}
               </div>
 
-              {/* Add / Edit Door Code Form (Only in Edit Mode) */}
-              {isEditMode && showAddDoor && (
+              {/* Add / Edit Door Code Form */}
+              {showAddDoor && (
                 <form
                   onSubmit={handleSaveDoor}
                   className="p-4 rounded-2xl bg-amber-950/30 border border-amber-800/80 space-y-3 animate-in fade-in duration-150"
@@ -928,11 +876,6 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
               {roomDoorCodes.length === 0 && !showAddDoor ? (
                 <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-800 text-center text-xs text-slate-400">
                   <span>No door security codes recorded for this ward yet.</span>
-                  {isEditMode && (
-                    <span className="block mt-1 text-amber-300 font-semibold">
-                      Click "+ Add Door Code" above to register access codes.
-                    </span>
-                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-2.5">
@@ -974,46 +917,42 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
                           )}
                         </button>
 
-                        {/* Edit actions in Edit Mode */}
-                        {isEditMode && (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleStartEditDoor(door)}
-                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
-                              title="Edit Door Code"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteDoor(door.id)}
-                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-300 hover:text-red-300"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
+                        {/* Edit actions */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleStartEditDoor(door)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
+                            title="Edit Door Code"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDoor(door.id)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-300 hover:text-red-300"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          )}
+          </div>
 
           {/* ========================================================
               SECTION 4: GENERAL WARD NOTES
              ======================================================== */}
-          {(activeTab === 'all' || activeTab === 'notes') && (
-            <div className="space-y-2.5">
+          <div ref={notesRef} className="space-y-2.5">
               <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                 <span className="text-xs font-bold text-slate-300">
                   Ward Information & Clinical Notes
                 </span>
-                {isEditMode && !isEditingWardNotes && (
+                {!isEditingWardNotes && (
                   <button
                     onClick={() => setIsEditingWardNotes(true)}
-                    className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"
+                    className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 cursor-pointer"
                   >
                     <Edit2 className="w-3 h-3" />
                     <span>Edit Notes</span>
@@ -1021,7 +960,7 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
                 )}
               </div>
 
-              {isEditMode && isEditingWardNotes ? (
+              {isEditingWardNotes ? (
                 <div className="space-y-2">
                   <textarea
                     rows={3}
@@ -1056,20 +995,15 @@ export const WardInfoModal: React.FC<WardInfoModalProps> = ({
                   )}
                 </div>
               )}
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
-          <div className="text-[11px] text-slate-400">
-            {isEditMode ? (
-              <span className="text-amber-300 font-medium">
-                Tip: Changes to red boxes, paperwork, and door codes are saved immediately.
-              </span>
-            ) : (
-              <span>
-                Want to add or change details? Turn on <strong>Edit Layout</strong> at the top.
+          <div>
+            {isEditMode && (
+              <span className="text-[11px] text-amber-300 font-medium">
+                Changes to red boxes, paperwork, and door codes are saved immediately.
               </span>
             )}
           </div>

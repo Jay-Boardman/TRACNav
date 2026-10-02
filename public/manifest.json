@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Transfusion Records And Compliance Navigator",
-  "short_name": "Transfusion Nav",
-  "description": "Warrington Hospital Transfusion Records And Compliance Navigator with ward locations, red blood transport boxes, transfusion request forms, and door access codes.",
+  "name": "Transfusion Records and Compliance",
+  "short_name": "Transfusion Records",
+  "description": "Warrington Hospital Transfusion Records and Compliance with ward locations, red blood transport boxes, transfusion request forms, and door access codes.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
